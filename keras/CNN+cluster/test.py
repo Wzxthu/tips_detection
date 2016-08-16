@@ -23,14 +23,14 @@ from sklearn.preprocessing import LabelEncoder
 # ## Load pre-processed data to check network performance
 
 # dimension of the patch
-p1 = 10 
+p1 = 10
 p2 = 10
-p3 = 20
+p3 = 10
 # weight number
-x = 2
+x = 3
 
-f_Xdata = open('data_n3.save', 'rb')
-f_Ydata = open('label_n3.save', 'rb')
+f_Xdata = open('data_n2.save', 'rb')
+f_Ydata = open('label_n2.save', 'rb')
 
 # we load the data via pickle
 X_data = pickle.load(f_Xdata)
@@ -52,12 +52,6 @@ Y_data = encoder.transform(Y_data)
 X_data = X_data.astype('float32')
 X_data  -= np.mean(X_data)
 X_data /= np.std(X_data)
-
-# data = [[] for i in range(len(X_data))]
-# for i in range(len(X_data)):
-#     temp = X_data[i].reshape(50,40)
-#     data[i] = [temp]
-# X_data = np.array(data)
 
 X_test = X_data
 Y_test = Y_data
@@ -86,50 +80,45 @@ print('there are ', len(Y_predict), ' samples!')
 print('error: ', tip, 'tips and ', notip, 'notips')
 
 # we load a test case
-nrrdData = nrrd.read('Case033.nrrd')
+nrrdData = nrrd.read('Case064.nrrd')
 im = nrrdData[0]
 # choose the reasonable region of test patch
-im = im[301:375, 207:310, 84:]
-s = im.shape
-print(s)
+pick = im[260:412, 163:300, 65:]
+# r, s, t = im.shape
+# pick = im[r//3:r//3*2, s//3:s//3*2+20, t//3:t//3*2+20]
+print(pick.shape)
 
 def findtips(N, p1, p2, p3):
     '''
     Find the tip in the image by computing testing patches at every voxel position
     TODO: make this method more efficient
     '''
-    xmiddle = s[0]//2
-    ymiddle = s[1]//2
-    zmiddle = s[2]//2
-    
+    xmiddle = pick.shape[0]//2
+    ymiddle = pick.shape[1]//2
+    zmiddle = pick.shape[2]//2
+
     x0= xmiddle - xmiddle//N
     y0= ymiddle - ymiddle//N
     z0= zmiddle - zmiddle//N
-    
+
     xe= xmiddle + xmiddle//N
     ye= ymiddle + ymiddle//N
     ze= zmiddle + zmiddle//N
-    
+
     tips = []
     bar = pyprind.ProgBar(xmiddle//N*2, title='Find_tip', stream=sys.stdout)
     for xi in range(x0, xe-p1):
         for yi in range(y0, ye-p2):
-            vols = [im[xi:xi+p1,yi:yi+p2,zi:zi+p3] for zi in range(z0,ze-p3)]
+            vols = [pick[xi:xi+p1,yi:yi+p2,zi:zi+p3] for zi in range(z0,ze-p3)]
             # we normalize the data (centered on mean 0 and rescaled in function of the STD)
             volnorm = [ x-np.mean(x) for x in vols]
             volnorm2 = [x/np.std(x) for x in volnorm]
-            vol = np.array(volnorm2)
-            cube = [[] for i in range(len(vol))]
-            for i in range(len(vol)):
-            	temp = vol[i].reshape(50,40)
-            	cube[i] = [temp]
-            cube = np.array(cube)
-            res = model.predict_proba(cube, batch_size=32, verbose=False)
-            indices = np.where(res[:,0]==1)
+            cube = np.array(volnorm2)
+            pro = model.predict_proba(cube, batch_size=32, verbose=False)
+            indices = np.where(pro[:,0] > 0.5)
             # we add the coordinates of the center voxel of the patches that tested positive
-            if len(indices[0]) >= 1:
-                for i in range(1):
-                    tips.append([xi+p1/2,yi+p2/2,z0+p3/2+indices[0][-i-1]])
+            for i in indices[0]:
+                tips.append([xi+p1/2+260,yi+p2/2+163,z0+p3/2+65+i, pro[i,0]])
         bar.update()
     return tips
 
@@ -140,10 +129,12 @@ res = findtips(1, p1, p2, p3)
 res = np.array(res)
 print(res.shape)
 
+f = open('full+pro.save', 'wb')
+np.save(f, res)
+f.close
 
 # ## Creation of a labelmap from the voxel that tested positive
-mask = np.zeros(im.shape)
-for coord in res:
-    mask[int(coord[0]),int(coord[1]),int(coord[2])]=1.0
-nrrd.write('mask%d-99.nrrd'%x, mask)
-nrrd.write('im%d-99.nrrd'%x, im)
+# mask = np.zeros(im.shape)
+# for coord in res:
+#     mask[int(coord[0]),int(coord[1]),int(coord[2])]=1.0
+# nrrd.write('mask%d.nrrd'%x, mask, nrrdData[1])
