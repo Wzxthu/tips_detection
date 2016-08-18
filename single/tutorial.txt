@@ -1,0 +1,34 @@
+to login: go on this page: https://console.aws.amazon.com
+here are the login info to connect to AWS:
+login: gpernelle+needlefinder@gmail.com
+password: heidelberg
+
+open the instance of 1-gpu
+
+
+To login via ssh, you need to use the key I gave.
+And they you you can log via ssh like that:
+ssh ubuntu@52.59.10.105 -i needlefinder-gpu-frankfurt.pem
+(note: needlefinder-gpu-frankfurt.pem should be the address of where it is,
+like C:\Users\fff\Desktop\needlefinder-gpu-frankfurt.pem)
+
+enter the aws server
+(choose the number you wanna detect, ex:18)
+input command lines:
+    cd tips_detection/single/
+    python needlefinder.py -n 18
+
+and download 18-tip.save to anywhere
+
+one more thing: download detect.py file to NeedleFinder-experiment04\NeedleFinder in your computer
+(this forder is where you once installed needlefinder module)
+
+open 3D slicer and pull a case in there
+slide to the bottom of it
+open python shell
+input command lines
+    path = where your 18-tip.save file locates and you have to add '' to make it a string
+    import detect
+    detect.test(path)
+
+Done!

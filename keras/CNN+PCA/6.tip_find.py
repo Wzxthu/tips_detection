@@ -1,8 +1,8 @@
 import numpy as np
 import nrrd
 
-Case_num = 77
-threshold = 10
+Case_num = 64
+threshold = 15
 
 nrrdData = nrrd.read('Case0%d.nrrd'%Case_num)
 im = nrrdData[0]
@@ -41,11 +41,19 @@ for coord in mid:
         if pick([int(coord[0]),int(coord[1]),int(coord[2]+1)]):
             flag = 1
             coord[2] += 1
+    print(temp_coord)
+    print(temp)
     if temp < threshold and temp_coord not in update:
         update.append(temp_coord)
 mid = update
 print(np.shape(mid))
 print(mid)
+
+mask = np.zeros(im.shape)
+for coord in mid:
+    mask[int(coord[0]),int(coord[1]),int(coord[2])]=1.0
+nrrd.write('mask-latest%d.nrrd'%Case_num, mask, nrrdData[1])
+
 
 ## try to search down layers
 # update = []
@@ -81,6 +89,6 @@ print(mid)
 # print(mid)
 
 
-f = open(str(Case_num)+'-latest.save', 'wb')
+f = open(str(Case_num)+'-latest-new.save', 'wb')
 np.save(f, mid)
 f.close

@@ -1,12 +1,7 @@
 
 # coding: utf-8
 
-# # Find TIPS
-# ## After training the network, load the weights and apply network to classify each voxel of a test cases
-
-
-from __future__ import division
-
+## After training the network, load the weights and apply network to classify each voxel of a test cases
 import sys
 import pyprind
 import os
@@ -19,73 +14,19 @@ USERPATH = os.path.expanduser("~")
 print(USERPATH)
 import six.moves.cPickle as pickle
 from keras.models import model_from_json
-from sklearn.preprocessing import LabelEncoder
-# ## Load pre-processed data to check network performance
-
-# dimension of the patch
-p1 = 10
-p2 = 10
-p3 = 10
-# weight number
-x = 3
-
-f_Xdata = open('data_n2.save', 'rb')
-f_Ydata = open('label_n2.save', 'rb')
-
-# we load the data via pickle
-X_data = pickle.load(f_Xdata)
-Y_data= pickle.load(f_Ydata)
-
-# we shuffle the data
-index = [i for i in range(len(X_data))]
-random.shuffle(index)
-X_data = X_data[index]
-Y_data = Y_data[index]
-
-
-# encode class values as integers
-encoder = LabelEncoder()
-encoder.fit(Y_data)
-Y_data = encoder.transform(Y_data)
-
-# we make sure the data is in the right format
-X_data = X_data.astype('float32')
-X_data  -= np.mean(X_data)
-X_data /= np.std(X_data)
-
-X_test = X_data
-Y_test = Y_data
 
 # we load the model with the trained weights
-model = model_from_json(open('my_model_architecture%d.json'%x).read())
-model.load_weights('my_model_weights_2d_%d.h5'%x)
+model = model_from_json(open('model_architecture.json').read())
+model.load_weights('model_weights.h5')
 model.compile(loss='binary_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
-
-# we check what was the performance of this CNN on the trained data
-Y_predict = model.predict_classes(X_test[:][:], batch_size=64)
-print('predict error:')
-print('1 for tip, 0 for notip:')
-tip = 0
-notip = 0
-for i in range(len(Y_predict)):
-    if Y_test[i] != Y_predict[i]:
-        if Y_test[i] == 1:
-            tip += 1
-        else:
-            notip += 1
-        print(Y_predict[i], Y_test[i])
-print('there are ', len(Y_predict), ' samples!')
-print('error: ', tip, 'tips and ', notip, 'notips')
 
 # we load a test case
 nrrdData = nrrd.read('Case064.nrrd')
 im = nrrdData[0]
 # choose the reasonable region of test patch
 pick = im[260:412, 163:300, 65:]
-# r, s, t = im.shape
-# pick = im[r//3:r//3*2, s//3:s//3*2+20, t//3:t//3*2+20]
 print(pick.shape)
 
 def findtips(N, p1, p2, p3):
@@ -115,26 +56,22 @@ def findtips(N, p1, p2, p3):
             volnorm2 = [x/np.std(x) for x in volnorm]
             cube = np.array(volnorm2)
             pro = model.predict_proba(cube, batch_size=32, verbose=False)
+            # choose a suitable confidence threshold here, default=0.5
             indices = np.where(pro[:,0] > 0.5)
             # we add the coordinates of the center voxel of the patches that tested positive
             for i in indices[0]:
+                # change coord accoring to region picked
                 tips.append([xi+p1/2+260,yi+p2/2+163,z0+p3/2+65+i, pro[i,0]])
         bar.update()
     return tips
 
-
-
-# find the tips for patches with size p
-res = findtips(1, p1, p2, p3)
+# find the tips for patches with size 10-10-10
+res = findtips(1, 10, 10, 10)
 res = np.array(res)
 print(res.shape)
 
-f = open('full+pro.save', 'wb')
+## save all tips
+f = open('tips.save', 'wb')
 np.save(f, res)
 f.close
 
-# ## Creation of a labelmap from the voxel that tested positive
-# mask = np.zeros(im.shape)
-# for coord in res:
-#     mask[int(coord[0]),int(coord[1]),int(coord[2])]=1.0
-# nrrd.write('mask%d.nrrd'%x, mask, nrrdData[1])

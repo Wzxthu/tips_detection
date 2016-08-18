@@ -1,8 +1,7 @@
 
 # coding: utf-8
 
-# # Extract needle tips and random patchs
-
+## Extract needle tips and random patchs
 import glob
 import os
 import numpy as np
@@ -76,6 +75,7 @@ def saveNoTips(tipsPos, numberOfSamples, casePath, spacing, patchsize):
     print('open: ', casePath)
     vol = nrrd.read(casePath + '/case.nrrd')[0]
     r1, s1, t1 = vol.shape
+    # pick approximate region
     pick = vol[r1//3:r1//3*2, s1//3:s1//3*2+20, t1//2+15:t1//3*2+20]
     r2, s2, t2 = pick.shape
     print('vol shape:', vol.shape)
@@ -91,8 +91,6 @@ def saveNoTips(tipsPos, numberOfSamples, casePath, spacing, patchsize):
             for j in range(ban):
                 region.append([x-r1//3+i-ban//2, y-s1//3+j-ban//2])
     print('region:', np.shape(region))
-    if region == []:
-        print('errorerrorerrorerrorerrorerror!')
     '''
     Save the random cubes
     '''
@@ -105,6 +103,7 @@ def saveNoTips(tipsPos, numberOfSamples, casePath, spacing, patchsize):
         x = np.random.randint(xmin,r2-xmin)
         y = np.random.randint(ymin,s2-ymin)
         z = np.random.randint(zmin,t2-zmin)
+        # exclude region where needles locate
         while [x, y] in region:
             x = np.random.randint(xmin,r2-xmin)
             y = np.random.randint(ymin,s2-ymin)
@@ -153,7 +152,7 @@ for spacing in [[1,1,1]]:
         print('extract tips:')
         extractTips(spacing, patchsize)
         print('extract notips:')
-        extractNoTips(spacing, patchsize, 00)
+        extractNoTips(spacing, patchsize, 200)
 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print('All done!')
 
