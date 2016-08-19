@@ -1,3 +1,7 @@
+
+# coding: utf-8
+
+## find tips from middle of needles
 import numpy as np
 import nrrd
 
