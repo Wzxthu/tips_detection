@@ -31,7 +31,7 @@ im = nrrdData[0]
 mask = np.zeros(im.shape)
 for coord in res:
     mask[int(coord[0]),int(coord[1]),int(coord[2])]=1.0
-nrrd.write('mask%d-new.nrrd'%Case_num, mask, nrrdData[1])
+nrrd.write('mask-Output-%d.nrrd'%Case_num, mask, nrrdData[1])
 
 mid = []
 rest = res
@@ -83,7 +83,7 @@ print(res.shape)
 mask = np.zeros(im.shape)
 for coord in res:
     mask[int(coord[0]),int(coord[1]),int(coord[2])]=1.0
-nrrd.write('mask-latest%d-new.nrrd'%Case_num, mask, nrrdData[1])
+nrrd.write('mask-PCA-%d.nrrd'%Case_num, mask, nrrdData[1])
 
 # save mid points of needles
 f = open(str(Case_num)+'-mid.save', 'wb')
